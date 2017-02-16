@@ -32,7 +32,7 @@ public class GaussianFitterTest {
 	@Before
 	public void setUp() throws Exception {
 		
-        File file = new File("H:\\Images\\test9000small.tif");
+        File file = new File("H:\\Images\\test9000.tif");
         
 		if (file.isDirectory()){
         	FolderOpener fo = new FolderOpener();
@@ -48,7 +48,7 @@ public class GaussianFitterTest {
 		    throw new Exception("File not found");
 		
 		AbstractModule tif = new ImageLoader(loc_im, LemmingUtils.readCameraSettings("camera.props"));
-		AbstractModule peak = new SetPeak(new Localization(7.0,7.0,10.0,1L));
+		AbstractModule peak = new SetPeak(new Localization(17.0,20.0,10.0,1L));
 		AbstractModule fitter = new GaussianFitter<>(7, LemmingUtils.readCSV("H:\\Images\\set1-calt.csv"));
 		AbstractModule saver = new SaveLocalizations(new File("H:\\Images\\test9000-g.csv"));
 		
