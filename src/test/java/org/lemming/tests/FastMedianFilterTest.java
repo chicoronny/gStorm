@@ -5,14 +5,14 @@ import static org.junit.Assert.*;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
+import org.gstorm.interfaces.Store;
+import org.gstorm.modules.ImageLoader;
+import org.gstorm.modules.SaveImages;
+import org.gstorm.pipeline.Manager;
+import org.gstorm.plugins.NMSFastMedian;
+import org.gstorm.tools.Utils;
 import org.junit.Before;
 import org.junit.Test;
-import org.lemming.interfaces.Store;
-import org.lemming.modules.ImageLoader;
-import org.lemming.modules.SaveImages;
-import org.lemming.pipeline.Manager;
-import org.lemming.plugins.NMSFastMedian;
-import org.lemming.tools.LemmingUtils;
 
 import ij.ImagePlus;
 
@@ -26,7 +26,7 @@ public class FastMedianFilterTest {
 	public void setUp() {
 		pipe = new Manager(Executors.newCachedThreadPool());
 
-		ImageLoader tif = new ImageLoader(new ImagePlus("/Users/ronny/Documents/TubulinAF647.tif"), LemmingUtils.readCameraSettings("camera.props"));
+		ImageLoader tif = new ImageLoader(new ImagePlus("/Users/ronny/Documents/TubulinAF647.tif"), Utils.readCameraSettings("camera.props"));
 		pipe.add(tif);
 
 		NMSFastMedian fmf = new NMSFastMedian(50, true, 1, 15);

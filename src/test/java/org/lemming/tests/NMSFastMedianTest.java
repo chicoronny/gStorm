@@ -8,11 +8,11 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 
-import org.lemming.interfaces.Frame;
-import org.lemming.pipeline.FrameElements;
-import org.lemming.pipeline.ImgLib2Frame;
-import org.lemming.plugins.NMSFastMedian;
-import org.lemming.tools.LemmingUtils;
+import org.gstorm.interfaces.Frame;
+import org.gstorm.pipeline.FrameElements;
+import org.gstorm.pipeline.ImgLib2Frame;
+import org.gstorm.plugins.NMSFastMedian;
+import org.gstorm.tools.Utils;
 
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -45,7 +45,7 @@ class NMSFastMedianTest<T extends NativeType<T> & RealType<T>> {
 		img.setSlice(150);
 		img.setDisplayRange(0, 8000);
 		NMSFastMedian<T> preprocessor =  new NMSFastMedian<T>(100, true, 5, 5);
-		List<Double> cameraProperties = LemmingUtils.readCameraSettings(System.getProperty("user.home")+"/camera.props");
+		List<Double> cameraProperties = Utils.readCameraSettings(System.getProperty("user.home")+"/camera.props");
 		final Double offset = cameraProperties.get(0);
 		final Double em_gain = cameraProperties.get(1);
 		final Double conversion = cameraProperties.get(2);
@@ -60,7 +60,7 @@ class NMSFastMedianTest<T extends NativeType<T> & RealType<T>> {
 		for (int i = start; i < start + preprocessor.getNumberOfFrames(); i++) {
 			if (i < stackSize) {
 				Object ip = stack.getPixels(i+1);
-				Img<T> curImage = LemmingUtils.wrap(ip, new long[]{stack.getWidth(), stack.getHeight()});
+				Img<T> curImage = Utils.wrap(ip, new long[]{stack.getWidth(), stack.getHeight()});
 				final Cursor<T> it = curImage.cursor();
 				while(it.hasNext()){
 					it.fwd();
@@ -76,9 +76,9 @@ class NMSFastMedianTest<T extends NativeType<T> & RealType<T>> {
 		if (origFrame==null) origFrame=list.peek();
 		
 		final Frame<T> result = preprocessor.preProcess(list,true);
-		final FrameElements<T> detResults = preprocessor.detect(LemmingUtils.substract(result,origFrame));
+		final FrameElements<T> detResults = preprocessor.detect(Utils.substract(result,origFrame));
 		if (detResults.getList().isEmpty()) return;
-		final FloatPolygon points = LemmingUtils.convertToPoints(detResults.getList(), new Rectangle(0,0,img.getWidth(),img.getHeight()), pixelSize);
+		final FloatPolygon points = Utils.convertToPoints(detResults.getList(), new Rectangle(0,0,img.getWidth(),img.getHeight()), pixelSize);
 		final PointRoi roi = new PointRoi(points);
 		previewerWindow.getImagePlus().setRoi(roi);
 	}

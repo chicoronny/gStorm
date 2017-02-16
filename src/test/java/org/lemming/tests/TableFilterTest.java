@@ -3,10 +3,11 @@ package org.lemming.tests;
 import static org.junit.Assert.assertNotEquals;
 
 import java.io.File;
+
+import org.gstorm.modules.TableLoader;
+import org.gstorm.pipeline.ExtendableTable;
 import org.junit.Before;
 import org.junit.Test;
-import org.lemming.modules.TableLoader;
-import org.lemming.pipeline.ExtendableTable;
 
 public class TableFilterTest {
 

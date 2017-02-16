@@ -5,20 +5,20 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.gstorm.interfaces.Element;
+import org.gstorm.interfaces.Frame;
+import org.gstorm.interfaces.Store;
+import org.gstorm.pipeline.AbstractModule;
+import org.gstorm.pipeline.FrameElements;
+import org.gstorm.pipeline.ImgLib2Frame;
+import org.gstorm.pipeline.LinkedStore;
+import org.gstorm.pipeline.Localization;
+import org.gstorm.plugins.*;
+import org.gstorm.tools.Utils;
+
 import ij.gui.*;
 import ij.plugin.OverlayLabels;
 import ij.process.FloatPolygon;
-import org.lemming.interfaces.Frame;
-import org.lemming.interfaces.Store;
-import org.lemming.pipeline.AbstractModule;
-import org.lemming.pipeline.FrameElements;
-import org.lemming.pipeline.ImgLib2Frame;
-import org.lemming.pipeline.LinkedStore;
-import org.lemming.pipeline.Localization;
-import org.lemming.plugins.*;
-import org.lemming.tools.LemmingUtils;
-import org.lemming.interfaces.Element;
-
 import ij.ImagePlus;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
@@ -38,7 +38,7 @@ class FitterTest<T extends RealType<T> & NativeType<T>> {
 		
 		int width = img.getWidth();
 		int height = img.getHeight();
-		Img<T> slice = LemmingUtils.wrap(ip, new long[]{width, height});
+		Img<T> slice = Utils.wrap(ip, new long[]{width, height});
 		Frame<T> f = new ImgLib2Frame<>(1, width, height, 150, slice);
 		List<Element> locList = new ArrayList<>();
 		/*1, 1, 35146.07, 7967.07, 45.07, 810.00
@@ -110,7 +110,7 @@ class FitterTest<T extends RealType<T> & NativeType<T>> {
 		}
 
 		final Overlay layer = img.getOverlay();
-		final FloatPolygon points = LemmingUtils.convertToPoints(list, new Rectangle(0,0,img.getWidth(),img.getHeight()), img.getCalibration().pixelDepth);
+		final FloatPolygon points = Utils.convertToPoints(list, new Rectangle(0,0,img.getWidth(),img.getHeight()), img.getCalibration().pixelDepth);
 		final Roi roi = new PointRoi(points);
 		roi.setStrokeColor(color);
 		layer.add(roi);
@@ -157,7 +157,7 @@ class FitterTest<T extends RealType<T> & NativeType<T>> {
 
 		// Gaussian
 		//AbstractModule mf = new GaussianFitter<T>(5,LemmingUtils.readCSV(System.getProperty("user.home")+"/ownCloud/set1-calt.csv"));
-		AbstractModule mf = new GaussianFitter<T>(5,LemmingUtils.readCSV("H:\\ownCloud\\set1-calt.csv"));
+		AbstractModule mf = new GaussianFitter<T>(5,Utils.readCSV("H:\\ownCloud\\set1-calt.csv"));
 		mf.setOutput(store);
 		mf.processData(el);
 		System.out.println("Gaussian\n");

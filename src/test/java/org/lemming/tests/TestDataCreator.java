@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import org.gstorm.pipeline.ExtendableTable;
 import org.junit.Before;
 import org.junit.Test;
-import org.lemming.pipeline.ExtendableTable;
 
 import ij.IJ;
 

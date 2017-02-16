@@ -6,13 +6,13 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
+import org.gstorm.interfaces.Store;
+import org.gstorm.modules.DataTable;
+import org.gstorm.modules.ReadLocalizationPrecision3D;
+import org.gstorm.pipeline.ExtendableTable;
+import org.gstorm.pipeline.Manager;
 import org.junit.Before;
 import org.junit.Test;
-import org.lemming.interfaces.Store;
-import org.lemming.modules.DataTable;
-import org.lemming.modules.ReadLocalizationPrecision3D;
-import org.lemming.pipeline.ExtendableTable;
-import org.lemming.pipeline.Manager;
 
 public class DataTableTest {
 	

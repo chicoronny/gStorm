@@ -5,12 +5,12 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.util.concurrent.Executors;
 
+import org.gstorm.modules.Renderer;
+import org.gstorm.modules.StoreLoader;
+import org.gstorm.pipeline.Manager;
+import org.gstorm.plugins.HistogramRenderer;
 import org.junit.Before;
 import org.junit.Test;
-import org.lemming.modules.Renderer;
-import org.lemming.modules.StoreLoader;
-import org.lemming.pipeline.Manager;
-import org.lemming.plugins.HistogramRenderer;
 
 public class HistogramRendererTest {
 

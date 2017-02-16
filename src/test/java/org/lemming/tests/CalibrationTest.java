@@ -1,6 +1,6 @@
 package org.lemming.tests;
 
-import org.lemming.math.Calibrator;
+import org.gstorm.math.Calibrator;
 
 import ij.IJ;
 import ij.ImagePlus;

@@ -6,12 +6,12 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
+import org.gstorm.interfaces.Store;
+import org.gstorm.modules.ReadLocalizationPrecision3D;
+import org.gstorm.pipeline.Manager;
+import org.gstorm.plugins.GaussRenderer;
 import org.junit.Before;
 import org.junit.Test;
-import org.lemming.interfaces.Store;
-import org.lemming.modules.ReadLocalizationPrecision3D;
-import org.lemming.pipeline.Manager;
-import org.lemming.plugins.GaussRenderer;
 
 public class GaussRendererTest {
 

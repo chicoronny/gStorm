@@ -5,18 +5,17 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.util.Map;
 
+import org.gstorm.interfaces.Store;
+import org.gstorm.modules.ImageLoader;
+import org.gstorm.modules.SaveLocalizations;
+import org.gstorm.pipeline.AbstractModule;
+import org.gstorm.pipeline.Localization;
+import org.gstorm.pipeline.Manager;
+import org.gstorm.plugins.GaussianFitter;
+import org.gstorm.plugins.SetPeak;
+import org.gstorm.tools.Utils;
 import org.junit.Before;
 import org.junit.Test;
-import org.lemming.interfaces.Store;
-import org.lemming.modules.ImageLoader;
-import org.lemming.modules.SaveLocalizations;
-import org.lemming.pipeline.AbstractModule;
-import org.lemming.pipeline.Localization;
-import org.lemming.pipeline.Manager;
-import org.lemming.plugins.GaussianFitter;
-import org.lemming.plugins.SetPeak;
-//import org.lemming.plugins.SymmetricGaussianFitter;
-import org.lemming.tools.LemmingUtils;
 
 import ij.ImagePlus;
 import ij.plugin.FileInfoVirtualStack;
@@ -47,9 +46,9 @@ public class GaussianFitterTest {
 	    if (loc_im ==null)
 		    throw new Exception("File not found");
 		
-		AbstractModule tif = new ImageLoader(loc_im, LemmingUtils.readCameraSettings("camera.props"));
+		AbstractModule tif = new ImageLoader(loc_im, Utils.readCameraSettings("camera.props"));
 		AbstractModule peak = new SetPeak(new Localization(17.0,20.0,10.0,1L));
-		AbstractModule fitter = new GaussianFitter<>(7, LemmingUtils.readCSV("H:\\Images\\set1-calt.csv"));
+		AbstractModule fitter = new GaussianFitter<>(7, Utils.readCSV("H:\\Images\\set1-calt.csv"));
 		AbstractModule saver = new SaveLocalizations(new File("H:\\Images\\test9000-g.csv"));
 		
 		pipe = new Manager();

@@ -6,15 +6,15 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
+import org.gstorm.interfaces.Store;
+import org.gstorm.modules.ImageLoader;
+import org.gstorm.modules.SaveLocalizations;
+import org.gstorm.modules.UnpackElements;
+import org.gstorm.pipeline.Manager;
+import org.gstorm.plugins.NMSDetector;
+import org.gstorm.tools.Utils;
 import org.junit.Before;
 import org.junit.Test;
-import org.lemming.interfaces.Store;
-import org.lemming.modules.ImageLoader;
-import org.lemming.modules.SaveLocalizations;
-import org.lemming.modules.UnpackElements;
-import org.lemming.pipeline.Manager;
-import org.lemming.plugins.NMSDetector;
-import org.lemming.tools.LemmingUtils;
 
 import ij.ImagePlus;
 
@@ -28,7 +28,7 @@ public class NMSFinderTest {
 	public void setUp() {
 		pipe = new Manager(Executors.newCachedThreadPool());
 		final ImagePlus image = new ImagePlus(System.getProperty("user.home")+"/ownCloud/p500ast_.tif");
-		ImageLoader tif = new ImageLoader(image, LemmingUtils.readCameraSettings("camera.props"));
+		ImageLoader tif = new ImageLoader(image, Utils.readCameraSettings("camera.props"));
 		pipe.add(tif);
 
 		NMSDetector peak = new NMSDetector(700, 9, 0);

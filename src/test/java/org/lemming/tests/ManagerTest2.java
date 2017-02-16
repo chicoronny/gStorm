@@ -6,16 +6,16 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
+import org.gstorm.interfaces.Store;
+import org.gstorm.modules.ImageLoader;
+import org.gstorm.modules.SaveLocalizations;
+import org.gstorm.pipeline.AbstractModule;
+import org.gstorm.pipeline.Manager;
+import org.gstorm.plugins.CentroidFitter;
+import org.gstorm.plugins.NMSDetector;
+import org.gstorm.tools.Utils;
 import org.junit.Before;
 import org.junit.Test;
-import org.lemming.interfaces.Store;
-import org.lemming.modules.ImageLoader;
-import org.lemming.modules.SaveLocalizations;
-import org.lemming.pipeline.AbstractModule;
-import org.lemming.pipeline.Manager;
-import org.lemming.plugins.CentroidFitter;
-import org.lemming.plugins.NMSDetector;
-import org.lemming.tools.LemmingUtils;
 
 import ij.ImagePlus;
 import ij.plugin.FileInfoVirtualStack;
@@ -46,7 +46,7 @@ public class ManagerTest2 {
 	    if (loc_im ==null)
 		    throw new Exception("File not found");
 		
-		AbstractModule tif = new ImageLoader(loc_im, LemmingUtils.readCameraSettings("camera.props"));
+		AbstractModule tif = new ImageLoader(loc_im, Utils.readCameraSettings("camera.props"));
 
 		AbstractModule peak = new NMSDetector(700,7,0);
 		//Fitter fitter = new QuadraticFitter(10);
