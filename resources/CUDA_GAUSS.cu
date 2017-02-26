@@ -1,5 +1,5 @@
 #define qrRankingThreshold FLT_EPSILON
-#define initialStepBoundFactor 100
+#define initialStepBoundFactor 0.05f
 #define orthoTolerance 10e-10f
 #define costRelativeTolerance 10e-10f
 #define parRelativeTolerance 10e-10f
@@ -12,6 +12,7 @@
 #define sqrtPI 1.772453851f
 #define CUDART_SQRT_TWO_F       1.414213562f
 #define FLT_EPSILON      1.192092896e-07F
+#define FLT_MIN 	1.175494e-38F
 #define PARAM_LENGTH 6
 #define IMSZBIG 21	
 
@@ -118,8 +119,8 @@ __device__ void getJacobian(float* point, const int size, float* jacobian) {
 	}
 }
 
-__device__	int converged(const int i, float* p, float* c) {
-	if (i>200) return 0;
+__device__	int converged(const int i, const int maxIter, float* p, float* c) {
+	if (i>maxIter) return 0;
 	if (abs(p[X0] - c[X0]) > 0.001)return 1;
 	if (abs(p[Y0] - c[Y0]) > 0.001)return 2;
 	if (abs(p[SX] - c[SX]) > 0.002)return 3;
@@ -132,17 +133,18 @@ __device__	int converged(const int i, float* p, float* c) {
 // fitting functions
 
 __device__ void qTy(const float* beta, const int* permutation, const float* wJ, const int nR, float* y) {
-	
-	for (int k = 0; k < PARAM_LENGTH; ++k) {
-		int pk = permutation[k];
-		float gamma = 0;
-		for (int i = k; i < nR; ++i) {
+	int i,k, pk;
+	float gamma;
+	for (k = 0; k < PARAM_LENGTH; ++k) {
+		pk = permutation[k];
+		gamma = 0;
+		for (i = k; i < nR; ++i) 
 			gamma += toData(wJ,i,pk) * y[i];
-		}
+		
 		gamma *= beta[pk];
-		for (int i = k; i < nR; ++i) {
+		for (i = k; i < nR; ++i) 
 			y[i] -= gamma * toData(wJ,i,pk);
-		}
+		
 	}
 }
 
@@ -164,7 +166,7 @@ __device__ float* qrDecomposition(const int solvedCols, float* diagR, float* jac
 		permutation[k] = k;
 		norm2 = 0.0f;
 		
-		for (int i = 0; i < nR; ++i) {
+		for (i = 0; i < nR; ++i) {
 			akk = toData(wjacobian,i,k);
 			norm2 += akk * akk;
 		}
@@ -228,7 +230,7 @@ __device__ void determineLMDirection(const int solvedCols, float* diagR, int* pe
 	float* qy, float* diag, float* lmDiag, float* work) {
 
 	int i, j, pj, k, pk;
-	float dpj, qtbpj, sin, cos, rkk, tan, cotan, temp, rik, temp2;
+	float dpj, qtbpj, sin, cos, rkk, tan, cotan, temp, rik, temp2, sum;
 
 	// copy R and Qty to preserve input and initialize s
 	//  in particular, save the diagonal elements of R in lmDir
@@ -285,7 +287,7 @@ __device__ void determineLMDirection(const int solvedCols, float* diagR, int* pe
 				work[k] = temp;
 
 				// accumulate the tranformation in the row of s
-				for (int i = k + 1; i < solvedCols; ++i) {
+				for (i = k + 1; i < solvedCols; ++i) {
 					rik = toData(weightedJacobian, i, pk);
 					temp2 = cos * rik + sin * lmDiag[i];
 					lmDiag[i] = -sin * rik + cos * lmDiag[i];
@@ -303,7 +305,7 @@ __device__ void determineLMDirection(const int solvedCols, float* diagR, int* pe
 	// solve the triangular system for z, if the system is
 	// singular, then obtain a least squares solution
 	int nSing = solvedCols;
-	for (int j = 0; j < solvedCols; ++j) {
+	for (j = 0; j < solvedCols; ++j) {
 		if ((lmDiag[j] == 0.f) && (nSing == solvedCols)) {
 			nSing = j;
 		}
@@ -312,10 +314,10 @@ __device__ void determineLMDirection(const int solvedCols, float* diagR, int* pe
 		}
 	}
 	if (nSing > 0) {
-		for (int j = nSing - 1; j >= 0; --j) {
-			int pj = permutation[j];
-			float sum = 0.0f;
-			for (int i = j + 1; i < nSing; ++i) {
+		for (j = nSing - 1; j >= 0; --j) {
+			pj = permutation[j];
+			sum = 0.f;
+			for (i = j + 1; i < nSing; ++i) {
 				sum += toData(weightedJacobian, i, pj) * work[i];
 			}
 			work[j] = (work[j] - sum) / lmDiag[j];
@@ -323,7 +325,7 @@ __device__ void determineLMDirection(const int solvedCols, float* diagR, int* pe
 	}
 
 	// permute the components of z back to components of lmDir
-	for (int j = 0; j < PARAM_LENGTH; ++j) {
+	for (j = 0; j < PARAM_LENGTH; ++j) {
 		lmDir[permutation[j]] = work[j];
 	}
 }
@@ -394,10 +396,10 @@ __device__ void determineLMParameter(const int solvedCols, float* diagR, int* pe
 
 	// calculate an upper bound, paru, for the zero of the function
 	sum2 = 0.f;
-	for (int j = 0; j < solvedCols; ++j) {
-		int pj = permutation[j];
-		float sum = 0.0f;
-		for (int i = 0; i <= j; ++i) {
+	for (j = 0; j < solvedCols; ++j) {
+		pj = permutation[j];
+		sum = 0.0f;
+		for (i = 0; i <= j; ++i) {
 			sum += toData(weightedJacobian, i , pj) * qy[i];
 		}
 		sum /= diag[pj];
@@ -417,7 +419,7 @@ __device__ void determineLMParameter(const int solvedCols, float* diagR, int* pe
 	}
 
 	int countdown;
-	float sPar, previousFP, tmp;
+	float sPar, previousFP, tmp, correction;
 	for (countdown = 10; countdown >= 0; --countdown) {
 
 		// evaluate the function at the current value of lmPar
@@ -468,7 +470,7 @@ __device__ void determineLMParameter(const int solvedCols, float* diagR, int* pe
 			s = work1[permutation[j]];
 			sum2 += s * s;
 		}
-		float correction = fp / (delta * sum2);
+		correction = fp / (delta * sum2);
 
 		// depending on the sign of the function, update parl or paru.
 		if (fp > 0.f) {
@@ -519,9 +521,8 @@ __device__ void kernel_CentroidFitter(const int sz, const float *data, float *sx
 }
 
 //***************************************************************************************************************************
-
 extern "C"
-__global__ void kernel_LM(float *d_Parameters, float* target, const int size, int iterations,const int Nfits){
+__global__ void kernel_LM(float *d_Parameters, float* target, const int size, const int maxIter, const int Nfits) {
 	
 	int tx = threadIdx.x;
 	int bx = blockIdx.x;
@@ -556,6 +557,9 @@ __global__ void kernel_LM(float *d_Parameters, float* target, const int size, in
 	int rank = 0;
 
 	// local point
+	float exeption_code = 0.f;
+	const int kSize = 8;
+	const int pos = (BlockSize*bx + tx)*kSize;
 	float   delta = 0.f;
 	float   xNorm = 0.f;
 	float diag[nC]; memset(diag, 0, nC * sizeof(float));
@@ -760,7 +764,7 @@ __global__ void kernel_LM(float *d_Parameters, float* target, const int size, in
 				xNorm = sqrtf(xNorm);
 
 				// tests for convergence.
-				if (converged(iterationCounter, previousPoint, currentPoint)==0) 
+				if (converged(iterationCounter, maxIter, previousPoint, currentPoint) == 0)
 					goto end;
 			}
 			else {
@@ -785,30 +789,48 @@ __global__ void kernel_LM(float *d_Parameters, float* target, const int size, in
 				goto end;
 
 			// tests for termination and stringent tolerances
-			if (abs(actRed) <= 2.f*FLT_EPSILON &&
-				preRed <= 2.f*FLT_EPSILON &&
-				ratio <= 2.0f) 
-				return;
-				//throw new ConvergenceException(LocalizedFormats.TOO_SMALL_COST_RELATIVE_TOLERANCE, costRelativeTolerance);
-			
-			else if (delta <= 2.f * FLT_EPSILON * xNorm) 
-				return;
-				//throw new ConvergenceException(LocalizedFormats.TOO_SMALL_PARAMETERS_RELATIVE_TOLERANCE, parRelativeTolerance);
-			
-			else if (maxCosine <= 2.f * FLT_EPSILON) 
-				return;
-				//throw new ConvergenceException(LocalizedFormats.TOO_SMALL_ORTHOGONALITY_TOLERANCE, orthoTolerance);
+			if (abs(actRed) <= 2.f*FLT_MIN &&
+				preRed <= 2.f*FLT_MIN &&
+				ratio <= 2.0f){
+					exeption_code = 1;
+					goto exep; 
+				}
+			//throw new ConvergenceException(LocalizedFormats.TOO_SMALL_COST_RELATIVE_TOLERANCE, costRelativeTolerance);
+
+			else if (delta <= 2.f * FLT_MIN * xNorm) {
+				exeption_code = 2;
+				goto exep;
+			}
+			//throw new ConvergenceException(LocalizedFormats.TOO_SMALL_PARAMETERS_RELATIVE_TOLERANCE, parRelativeTolerance);
+
+			else if (maxCosine <= 2.f * FLT_MIN) {
+				exeption_code = 3;
+				goto exep;
+			}
+			//throw new ConvergenceException(LocalizedFormats.TOO_SMALL_ORTHOGONALITY_TOLERANCE, orthoTolerance);
 		}
 	}
-	end:
-
+//exception released
+exep:
 	//write to global arrays
-	d_Parameters[BlockSize*bx + tx] = currentPoint[X0];
-	d_Parameters[Nfits + BlockSize*bx + tx] = currentPoint[Y0];
-	d_Parameters[Nfits * 2 + BlockSize*bx + tx] = currentPoint[SX];
-	d_Parameters[Nfits * 3 + BlockSize*bx + tx] = currentPoint[SY];
-	d_Parameters[Nfits * 4 + BlockSize*bx + tx] = currentPoint[I0];
-	d_Parameters[Nfits * 5 + BlockSize*bx + tx] = currentPoint[BG];
-	d_Parameters[Nfits * 6 + BlockSize*bx + tx] = (float)iterationCounter;
-	d_Parameters[Nfits * 7 + BlockSize*bx + tx] = (float)(bx*BlockSize + tx);
+	d_Parameters[pos] = 0;
+	d_Parameters[pos + 1] = 0;
+	d_Parameters[pos + 2] = 0;
+	d_Parameters[pos + 3] = 0;
+	d_Parameters[pos + 4] = 0;
+	d_Parameters[pos + 5] = exeption_code;
+	d_Parameters[pos + 6] = (float)iterationCounter;
+	d_Parameters[pos + 7] = (float)(bx*BlockSize + tx);
+	return;
+
+end:
+	//write to global arrays
+	d_Parameters[pos] = currentPoint[X0];
+	d_Parameters[pos + 1] = currentPoint[Y0];
+	d_Parameters[pos + 2] = currentPoint[SX];
+	d_Parameters[pos + 3] = currentPoint[SY];
+	d_Parameters[pos + 4] = currentPoint[I0];
+	d_Parameters[pos + 5] = currentPoint[BG];
+	d_Parameters[pos + 6] = (float)iterationCounter;
+	d_Parameters[pos + 7] = (float)(bx*BlockSize + tx);
 }

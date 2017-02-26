@@ -196,7 +196,7 @@ public class Controller<T extends NumericType<T> & NativeType<T> & RealType<T>> 
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e1) {
 			IJ.error(e1.getMessage());
 		}
-		setTitle("Lemming");
+		setTitle("gStorm");
 		setBounds(100, 100, 320, 500);
 		JPanel contentPane = new JPanel();
 		setContentPane(contentPane);

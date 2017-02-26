@@ -10,9 +10,11 @@ import org.gstorm.interfaces.Store;
 import org.gstorm.modules.ImageLoader;
 import org.gstorm.modules.SaveLocalizations;
 import org.gstorm.pipeline.AbstractModule;
+import org.gstorm.pipeline.Localization;
 import org.gstorm.pipeline.Manager;
 import org.gstorm.plugins.CUDA_Gaussian_Fitter;
-import org.gstorm.plugins.NMSDetector;
+//import org.gstorm.plugins.NMSDetector;
+import org.gstorm.plugins.SetPeak;
 import org.gstorm.tools.Utils;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +56,8 @@ public class GPUFitterTest {
 	    
 		AbstractModule tif = new ImageLoader(loc_im, Utils.readCameraSettings("camera.props"));
 		//AbstractModule peak = new NMSDetector(70,7);
-		AbstractModule peak = new NMSDetector(70,7,0); //
+		//AbstractModule peak = new NMSDetector(70,7,0); 
+		AbstractModule peak = new SetPeak(new Localization(17.0,20.0,10.0,1L));
 		//AbstractModule peak = new DoGFinder(4.5f,13); //DRG_KO_5_1.tif
 		//AbstractModule peak = new NMSDetector(2000,5); //DRG_WT_MT_A647_1.tif
 		//AbstractModule fitter = new MLE_Fitter<>(6,1152*8);

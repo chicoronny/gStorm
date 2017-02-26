@@ -105,23 +105,21 @@ public class CUDA_Gaussian_Fitter<T extends RealType<T>> extends Fitter<T> {
 	
 	private void processGPU(double pixelDepth){
 		final CudaThread t = new CudaThread(device, kernelList, kernelSize, kernelList.size(), PARAMETER_LENGTH, "kernel_LM");
-		//MLE t = new MLE(kernelList, kernelSize, kernelList.size());
 		final FutureTask<Map<String, float[]>> f = new FutureTask<>(t);
 			try {
 			f.run();
 			Map<String, float[]> res = f.get();
 			float[] par = res.get("Parameters");
-			int ksize = kernelList.size();
-			for (int i=0;i<ksize;i++){
+			for (int i=0;i<kernelList.size();i++){
 				long xstart = kernelList.get(i).getRoi().min(0);
 				long ystart = kernelList.get(i).getRoi().min(1);
-				float x = par[i] + xstart;
-				float y = par[ksize+i] + ystart;
-				float sx = par[2*ksize+i];
-				float sy = par[3*ksize+i];
-				float intensity = par[4*ksize+i];
-				float bg = par[5*ksize+i];
-				int fitI = (int)par[6*ksize+i];
+				float x = par[i * PARAMETER_LENGTH] + xstart;
+				float y = par[i * PARAMETER_LENGTH + 1] + ystart;
+				float sx = par[i * PARAMETER_LENGTH + 2];
+				float sy = par[i * PARAMETER_LENGTH + 3];
+				float intensity = par[i * PARAMETER_LENGTH + 4];
+				float bg = par[i * PARAMETER_LENGTH + 5];
+				int fitI = (int)par[i * PARAMETER_LENGTH + 6];
 				long frame = kernelList.get(i).getFrame();
 				long id = kernelList.get(i).getID();
 				newOutput(new LocalizationPrecision3D(id, x*pixelDepth, y*pixelDepth, fitI, sx*pixelDepth, sy*pixelDepth, bg, intensity, frame));
