@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.lang3.mutable.MutableDouble;
 import org.apache.commons.math3.special.Erf;
 import org.apache.commons.math3.util.FastMath;
 import org.gstorm.pipeline.Kernel;

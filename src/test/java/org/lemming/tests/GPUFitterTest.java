@@ -36,7 +36,7 @@ public class GPUFitterTest {
 		
         //File file = new File("D:/Images/DRG_KO_5_1.tif");
 		//File file = new File("D:/Images/DRG_WT_MT_A647_1.tif");
-        File file = new File("H:/Images/test9000.tif");
+        File file = new File("H:/Images/test81000.tif");
 		//File file = new File("D:/ownCloud/Tubulin1.tif");
         //File file = new File(System.getProperty("user.home")+"/ownCloud/exp-images.tif");
 
@@ -57,13 +57,13 @@ public class GPUFitterTest {
 		AbstractModule tif = new ImageLoader(loc_im, Utils.readCameraSettings("camera.props"));
 		//AbstractModule peak = new NMSDetector(70,7);
 		//AbstractModule peak = new NMSDetector(70,7,0); 
-		AbstractModule peak = new SetPeak(new Localization(17.0,20.0,10.0,1L));
+		AbstractModule peak = new SetPeak(new Localization(23.0,26.0,10.0,1L));
 		//AbstractModule peak = new DoGFinder(4.5f,13); //DRG_KO_5_1.tif
 		//AbstractModule peak = new NMSDetector(2000,5); //DRG_WT_MT_A647_1.tif
 		//AbstractModule fitter = new MLE_Fitter<>(6,1152*8);
 		AbstractModule fitter = new CUDA_Gaussian_Fitter<>(6,1152*8);
 		//AbstractModule saver = new SaveLocalizations(new File("H:/Images/test9000-mle.tif"));
-		AbstractModule saver = new SaveLocalizations(new File("H:/Images/test9000-cudaG.csv"));
+		AbstractModule saver = new SaveLocalizations(new File("H:/Images/test81000-cudaG.csv"));
 		
 
 		pipe = new Manager(Executors.newCachedThreadPool());

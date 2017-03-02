@@ -1,4 +1,3 @@
-#define qrRankingThreshold FLT_EPSILON
 #define initialStepBoundFactor 0.05f
 #define orthoTolerance 10e-10f
 #define costRelativeTolerance 10e-10f
@@ -11,11 +10,11 @@
 #define BG 5
 #define sqrtPI 1.772453851f
 #define CUDART_SQRT_TWO_F       1.414213562f
-#define FLT_EPSILON      1.192092896e-07F
+#define TWO_EPS 2.220446049E-16f
 #define FLT_MIN 	1.175494e-38F
 #define PARAM_LENGTH 6
 #define IMSZBIG 21	
-
+#define qrRankingThreshold TWO_EPS
 
 __device__ float toData(const float* m, const int r, const int c) {
 	return m[r*PARAM_LENGTH + c];
@@ -408,7 +407,7 @@ __device__ void determineLMParameter(const int solvedCols, float* diagR, int* pe
 	float gNorm = sqrtf(sum2);
 	float paru = gNorm / delta;
 	if (paru == 0.f) {
-		paru = FLT_EPSILON / min(delta, 0.1f);
+		paru = TWO_EPS / min(delta, 0.1f);
 	}
 
 	// if the input par lies outside of the interval (parl,paru),
@@ -424,7 +423,7 @@ __device__ void determineLMParameter(const int solvedCols, float* diagR, int* pe
 
 		// evaluate the function at the current value of lmPar
 		if (*lmPar == 0.f) {
-			*lmPar = max(FLT_EPSILON, 0.001f * paru);
+			*lmPar = max(TWO_EPS, 0.001f * paru);
 		}
 		sPar = sqrtf(*lmPar);
 		for (j = 0; j < solvedCols; ++j) {
@@ -522,7 +521,7 @@ __device__ void kernel_CentroidFitter(const int sz, const float *data, float *sx
 
 //***************************************************************************************************************************
 extern "C"
-__global__ void kernel_LM(float *d_Parameters, float* target, const int size, const int maxIter, const int Nfits) {
+__global__ void kernel_LM(float* d_data, int sz, int maxIter, int Nfits, float *d_Parameters) {
 	
 	int tx = threadIdx.x;
 	int bx = blockIdx.x;
@@ -530,17 +529,17 @@ __global__ void kernel_LM(float *d_Parameters, float* target, const int size, co
 
 	//Prevent read/write past end of array
 	if ((bx*BlockSize + tx) >= Nfits) return;
-	if (size > IMSZBIG) return;
+	if (sz > IMSZBIG) return;
 
 	//load data
-	float *s_data = target + (size*size*bx*BlockSize + size*size*tx);
+	float *s_data = d_data + (sz*sz*bx*BlockSize + sz*sz*tx);
 
 	//initial values
-	const int nR = size*size; // Number of observed data.
+	const int nR = sz*sz; // Number of observed data.
 	const int nE = IMSZBIG * IMSZBIG; // maximum number of data
 	const int nC = PARAM_LENGTH; // Number of parameters.
 	float start[nC]; memset(start, 0, nC * sizeof(float));
-	kernel_CentroidFitter(size, s_data, &start[X0], &start[Y0], &start[SX], &start[SY]);
+	kernel_CentroidFitter(sz, s_data, &start[X0], &start[Y0], &start[SX], &start[SY]);
 	start[I0] = SHRT_MAX - SHRT_MIN;
 
 	int iterationCounter = 0;
@@ -558,8 +557,7 @@ __global__ void kernel_LM(float *d_Parameters, float* target, const int size, co
 
 	// local point
 	float exeption_code = 0.f;
-	const int kSize = 8;
-	const int pos = (BlockSize*bx + tx)*kSize;
+	int pos = (BlockSize*bx + tx)*8;
 	float   delta = 0.f;
 	float   xNorm = 0.f;
 	float diag[nC]; memset(diag, 0, nC * sizeof(float));
@@ -588,9 +586,9 @@ __global__ void kernel_LM(float *d_Parameters, float* target, const int size, co
 	// Evaluate the function at the starting point and calculate its norm.
 	//value will be reassigned in the loop
 	evaluationCounter++;
-	getValues(start, size, currentValues);
-	subtract(target, currentValues, nR, currentResiduals);
-	getJacobian(start, size, jacobian);
+	getValues(start, sz, currentValues);
+	subtract(s_data, currentValues, nR, currentResiduals);
+	getJacobian(start, sz, jacobian);
 	float currentCost = getCost(currentResiduals, nR);
 	memcpy(currentPoint,start,nC*sizeof(float));
 	
@@ -700,16 +698,16 @@ __global__ void kernel_LM(float *d_Parameters, float* target, const int size, co
 			memset(currentResiduals, 0, nR * sizeof(float));
 			memset(jacobian, 0, nR*nC * sizeof(float));
 			evaluationCounter++;
-			getValues(currentPoint, size,currentValues);
-			subtract(target, currentValues, nR, currentResiduals);
-			getJacobian(currentPoint, size, jacobian);
+			getValues(currentPoint, sz, currentValues);
+			subtract(s_data, currentValues, nR, currentResiduals);
+			getJacobian(currentPoint, sz, jacobian);
 			currentCost = getCost(currentResiduals, nR);
 
 			// compute the scaled actual reduction
 			actRed = -1.0f;
 			if (0.1f * currentCost < previousCost) {
 				if (currentCost == previousCost)
-					previousCost += 10.f*FLT_EPSILON;
+					previousCost += 10.f*TWO_EPS;
 				r = currentCost / previousCost;
 				actRed = 1.0f - r * r;
 			}
@@ -789,21 +787,21 @@ __global__ void kernel_LM(float *d_Parameters, float* target, const int size, co
 				goto end;
 
 			// tests for termination and stringent tolerances
-			if (abs(actRed) <= 2.f*FLT_MIN &&
-				preRed <= 2.f*FLT_MIN &&
+			if (abs(actRed) <= 2.f*TWO_EPS &&
+				preRed <= 2.f*TWO_EPS &&
 				ratio <= 2.0f){
 					exeption_code = 1;
 					goto exep; 
 				}
 			//throw new ConvergenceException(LocalizedFormats.TOO_SMALL_COST_RELATIVE_TOLERANCE, costRelativeTolerance);
 
-			else if (delta <= 2.f * FLT_MIN * xNorm) {
+			else if (delta <= 2.f * TWO_EPS * xNorm) {
 				exeption_code = 2;
 				goto exep;
 			}
 			//throw new ConvergenceException(LocalizedFormats.TOO_SMALL_PARAMETERS_RELATIVE_TOLERANCE, parRelativeTolerance);
 
-			else if (maxCosine <= 2.f * FLT_MIN) {
+			else if (maxCosine <= 2.f * TWO_EPS) {
 				exeption_code = 3;
 				goto exep;
 			}

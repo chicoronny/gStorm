@@ -47,17 +47,17 @@ public class CUDA_Gaussian_Fitter<T extends RealType<T>> extends Fitter<T> {
 	private static final String KEY = "CUDA_GAUSSIAN";
 	private static final String INFO_TEXT = "<html>" + "Gaussian Fitter Plugin (with sx and sy) using the NVIDIA CUDA capabilities " + "</html>";
 	private static final int PARAMETER_LENGTH = 8;
-	private final int maxKernels;
+	private static int maxKernels;
 	private final FastTable<Kernel> kernelList;
 	private final CUdevice device;
 	private final int kernelSize;
-	private final int numProcessors= Runtime.getRuntime().availableProcessors();
+	private final static int numProcessors= Runtime.getRuntime().availableProcessors();
 
 	
 	public CUDA_Gaussian_Fitter(int windowSize, int maxKernels) {
 		super(windowSize);
 		kernelSize = 2 * size + 1;
-		this.maxKernels = maxKernels;
+		CUDA_Gaussian_Fitter.maxKernels = maxKernels;
 		kernelList = new FastTable<>();
 		JCudaDriver.setExceptionsEnabled(true);
 		JCudaDriver.cuInit(0);
@@ -204,7 +204,7 @@ public class CUDA_Gaussian_Fitter<T extends RealType<T>> extends Fitter<T> {
 		return null;
 	}
 	
-	private class CudaThread implements Callable<Map<String,float[]>> {
+	private static class CudaThread implements Callable<Map<String,float[]>> {
 		
 		private final int sz;
 		private final int sz2;
@@ -213,7 +213,7 @@ public class CUDA_Gaussian_Fitter<T extends RealType<T>> extends Fitter<T> {
 		private final List<Kernel> kList;
 		private final int PARAMETER_LENGTH;
 		private final String functionName;
-		private int count = 0;
+		static private int count;
 		
 		private static final int iterations = 200;
 		private static final String ptxFileName = "resources/CUDA_GAUSS.ptx";
@@ -231,7 +231,7 @@ public class CUDA_Gaussian_Fitter<T extends RealType<T>> extends Fitter<T> {
 		
 		@Override
 	    public Map<String, float[]> call() {
-			int BlockSize = (int) Math.floor(sharedMemPerBlock/4/sz/sz);
+			int BlockSize = (int) Math.floor(sharedMemPerBlock/sz2/4);
 			float[] Ival = new float[sz2*nKernels];
 			for(int k=0;k<nKernels;k++){
 				int sliceIndex = k*sz2;
@@ -272,10 +272,10 @@ public class CUDA_Gaussian_Fitter<T extends RealType<T>> extends Fitter<T> {
 	        // of pointers which point to the actual values.
 	        Pointer kernelParameters = Pointer.to(
 	            Pointer.to(d_data),
-	            Pointer.to(d_Parameters),
 	            Pointer.to(new int[]{sz}),
 	            Pointer.to(new int[]{iterations}),
-	            Pointer.to(new int[]{Nfits})
+	            Pointer.to(new int[]{Nfits}),
+	            Pointer.to(d_Parameters)
 	        );
 	        
 	        // Call the kernel function.
