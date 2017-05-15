@@ -12,6 +12,7 @@ import org.gstorm.pipeline.AbstractModule;
 import org.gstorm.pipeline.Localization;
 import org.gstorm.pipeline.Manager;
 import org.gstorm.plugins.GaussianFitter;
+import org.gstorm.plugins.NMSDetector;
 import org.gstorm.plugins.SetPeak;
 import org.gstorm.tools.Utils;
 import org.junit.Before;
@@ -31,7 +32,8 @@ public class GaussianFitterTest {
 	@Before
 	public void setUp() throws Exception {
 		
-        File file = new File("H:\\Images\\test9000.tif");
+        //File file = new File("H:\\Images\\test9000.tif");
+        File file = new File("/home/ronny/Bilder/sequence-as-stack-MT1.0-2D-Exp.tif");
         
 		if (file.isDirectory()){
         	FolderOpener fo = new FolderOpener();
@@ -47,9 +49,11 @@ public class GaussianFitterTest {
 		    throw new Exception("File not found");
 		
 		AbstractModule tif = new ImageLoader(loc_im, Utils.readCameraSettings("camera.props"));
-		AbstractModule peak = new SetPeak(new Localization(17.0,20.0,10.0,1L));
-		AbstractModule fitter = new GaussianFitter<>(7, Utils.readCSV("H:\\Images\\set1-calt.csv"));
-		AbstractModule saver = new SaveLocalizations(new File("H:\\Images\\test9000-g.csv"));
+		AbstractModule peak = new NMSDetector(25,3,1);
+		//AbstractModule peak = new SetPeak(new Localization(17.0,20.0,10.0,1L));
+		AbstractModule fitter = new GaussianFitter<>(4, Utils.readCSV("/home/ronny/Bilder/set1-calt.csv"));
+		//AbstractModule saver = new SaveLocalizations(new File("H:\\Images\\test9000-g.csv"));
+		AbstractModule saver = new SaveLocalizations(new File("/home/ronny/Bilder/sequence-as-stack-MT1.0-2D-Exp-G.csv"));
 		
 		pipe = new Manager();
 		pipe.add(tif);

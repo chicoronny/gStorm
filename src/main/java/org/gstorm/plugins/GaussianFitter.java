@@ -51,7 +51,7 @@ public class GaussianFitter<T extends RealType<T>> extends CPU_Fitter<T> {
 			pixels.min(imageMin);
 			pixels.max(imageMax);
 			final Interval roi = cropInterval(imageMin,imageMax,new long[]{x - halfKernel,y - halfKernel},new long[]{x + halfKernel,y + halfKernel});
-			final Gaussian2DFitter<T> gf = new Gaussian2DFitter<>(Views.interval(pixels, roi), 200, 200);
+			final Gaussian2DFitter<T> gf = new Gaussian2DFitter<>(Views.interval(pixels, roi), 25, 25);
 			double[] result;
 			result = gf.fit();
 			if (result != null) {

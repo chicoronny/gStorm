@@ -1,38 +1,28 @@
 #define initialStepBoundFactor 0.05f
-#define orthoTolerance 10e-10f
-#define costRelativeTolerance 10e-10f
-#define parRelativeTolerance 10e-10f
+#define orthoTolerance 10e-5f
+#define costRelativeTolerance 10e-5f
+#define parRelativeTolerance 10e-5f
 #define X0 0
 #define Y0 1
 #define SX 2
 #define SY 3
 #define I0 4
 #define BG 5
-#define sqrtPI 1.772453851f
+#define SQRTPI  0.564189584f
 #define CUDART_SQRT_TWO_F       1.414213562f
-#define TWO_EPS 2.220446049E-16f
+#define FLT_EPSILON 1.1920928e-7f
 #define FLT_MIN 	1.175494e-38F
 #define PARAM_LENGTH 6
 #define IMSZBIG 21	
-#define qrRankingThreshold TWO_EPS
+#define qrRankingThreshold FLT_MIN
 
 __device__ float toData(const float* m, const int r, const int c) {
 	return m[r*PARAM_LENGTH + c];
 }
 
 __device__ void fromData(float* m, const int r, const int c, const float value) {
-	if (m == NULL) return;
+	//if (m == NULL) return;
 	m[r*PARAM_LENGTH + c] = value;
-}
-
-__device__ float dotProduct(float* v, float* w, const int dim) {
-	float dot = 0.f;
-	int i;
-
-	for (i = 0; i < dim; i++)
-		dot += v[i] * w[i];
-
-	return dot;
 }
 
 __device__ void subtract(const float* v, const float* w, const int dim, float* result) {
@@ -41,89 +31,89 @@ __device__ void subtract(const float* v, const float* w, const int dim, float* r
 		result[i] = v[i] - w[i];
 }
 
-__device__ float getCost(float* residuals, const int dim) {
-	if (residuals == NULL) return NULL;
-	return sqrtf(dotProduct(residuals, residuals, dim));
+__device__ double getCost(float* v, const int dim) {
+	double dot = 0.;
+
+	for (int i = 0; i < dim; i++)
+		dot += v[i] * v[i];
+
+	return sqrt(dot);
 }
 
 // Math functions
 
 __device__ float dErf(const float v) {
-	return 2.f * expf(-v*v) / sqrtPI;
+	return 2.f * expf(-v*v) * SQRTPI;
 }
 
-__device__ float Ex(const int x, float* variables) {
-	float tsx = 1.f / (CUDART_SQRT_TWO_F*variables[SX]);
+__device__ float Ex(const uint x, const float tsx, float* variables) {
 	float e1 = erff(tsx*(x - variables[X0] + 0.5f));
 	float e2 = erff(tsx*(x - variables[X0] - 0.5f));
 	return 0.5f*e1 - 0.5f*e2;
 }
 
-__device__ float Ey(const int y, float* variables) {
-	float tsy = 1.f / (CUDART_SQRT_TWO_F*variables[SY]);
+__device__ float Ey(const uint y, const float tsy, float* variables) {
 	float e1 = erff(tsy*(y - variables[Y0] + 0.5f));
 	float e2 = erff(tsy*(y - variables[Y0] - 0.5f));
 	return 0.5f*e1 - 0.5f*e2;
 }
 
-__device__ float dEx(const int x, float* variables) {
-	float tsx = 1.f / (CUDART_SQRT_TWO_F*variables[SX]);
+__device__ float dEx(const uint x, const float tsx, float* variables) {
 	return 0.5f*tsx*(dErf(tsx*(x - variables[X0] - 0.5f)) - dErf(tsx*(x - variables[X0] + 0.5f)));
 }
 
-__device__ float dEy(const int y, float* variables) {
-	float tsy = 1.f / (CUDART_SQRT_TWO_F*variables[SY]);
+__device__ float dEy(const uint y, const float tsy, float* variables) {
 	return 0.5f*tsy*(dErf(tsy*(y - variables[Y0] - 0.5f)) - dErf(tsy*(y - variables[Y0] + 0.5f)));
 }
 
-__device__ float dEsx(const int x, float* variables) {
-	float tsx = 1.f / (CUDART_SQRT_TWO_F*variables[SX]);
+__device__ float dEsx(const uint x, const float tsx, float* variables) {
 	return 0.5f*tsx*((x - variables[X0] - 0.5f)*dErf(tsx*(x - variables[X0] - 0.5f)) - (x - variables[X0] + 0.5f)*dErf(tsx*(x - variables[X0] + 0.5f))) / variables[SX];
 }
 
-__device__ float dEsy(const int y, float* variables) {
-	float tsy = 1.f / (CUDART_SQRT_TWO_F*variables[SY]);
+__device__ float dEsy(const uint y, const float tsy, float* variables) {
 	return 0.5f*tsy*((y - variables[Y0] - 0.5f)*dErf(tsy*(y - variables[Y0] - 0.5f)) - (y - variables[Y0] + 0.5f)*dErf(tsy*(y - variables[Y0] + 0.5f))) / variables[SY];
 }
 
-__device__ float getValue(float* params, const int x, const int y) {
-	float ex = Ex(x, params);
-	float ey = Ey(y, params);
-	float ret = params[I0] * ex * ey + params[BG];
-	return ret;
+__device__ float getValue(float* params, const uint x, const uint y) {
+	float tsx = 1.f / (CUDART_SQRT_TWO_F*params[SX]);
+	float tsy = 1.f / (CUDART_SQRT_TWO_F*params[SY]);
+	float ex = Ex(x, tsx, params);
+	float ey = Ey(y, tsy, params);
+	return  params[I0] * ex * ey + params[BG];
 }
 
 __device__ void getValues(float* point, const int size, float* retVal) {
-	int length = size*size;
+	const int length = size*size;
 
-	for (int i = 0; i < length; i++) {
+	for (int i = 0; i < length; i++) 
 		retVal[i] = getValue(point, i%size, i/size);
-	}
 }
 
 __device__ void getJacobian(float* point, const int size, float* jacobian) {
-	int length = size*size;
+	float ex,ey;
+	uint x,y,i;
+	const float tsx = 1.f / (CUDART_SQRT_TWO_F*point[SX]);
+	const float tsy = 1.f / (CUDART_SQRT_TWO_F*point[SY]);
 	
-	for (int i = 0; i < length; ++i) {
-		int x = i % size;
-		int y = i / size;
-		float ex = Ex(x, point);
-		float ey = Ey(y, point);
-		fromData(jacobian, i, X0, point[I0] * ey*dEx(x, point));
-		fromData(jacobian, i, Y0, point[I0] * ex*dEy(y, point));
-		fromData(jacobian, i, SX, point[I0] * ey*dEsx(x, point));
-		fromData(jacobian, i, SY, point[I0] * ex*dEsy(y, point));
+	for (i = 0; i < size*size; ++i) {
+		x = i % size;
+		y = i / size;
+		ex = Ex(x, tsx, point);
+		ey = Ey(y, tsy, point);
+		fromData(jacobian, i, X0, point[I0] * ey*dEx(x, tsx, point));
+		fromData(jacobian, i, Y0, point[I0] * ex*dEy(y, tsy, point));
+		fromData(jacobian, i, SX, point[I0] * ey*dEsx(x, tsx, point));
+		fromData(jacobian, i, SY, point[I0] * ex*dEsy(y, tsy, point));
 		fromData(jacobian, i, I0, ex*ey);
 		fromData(jacobian, i, BG, 1.f);
 	}
 }
 
-__device__	int converged(const int i, const int maxIter, float* p, float* c) {
-	if (i>maxIter) return 0;
+__device__	int converged(float* p, float* c) {
 	if (abs(p[X0] - c[X0]) > 0.001)return 1;
 	if (abs(p[Y0] - c[Y0]) > 0.001)return 2;
 	if (abs(p[SX] - c[SX]) > 0.002)return 3;
-	if (abs(p[SY] - c[SY]) > 0.002)return 4;	
+	if (abs(p[SY] - c[SY]) > 0.002)return 4;
 	if (abs(p[I0] - c[I0]) > 0.01)return 5;
 	if (abs(p[BG] - c[BG]) > 0.01)return 6;
 	return 0;
@@ -131,7 +121,7 @@ __device__	int converged(const int i, const int maxIter, float* p, float* c) {
 
 // fitting functions
 
-__device__ void qTy(const float* beta, const int* permutation, const float* wJ, const int nR, float* y) {
+__device__ void qTy(float* beta, int* permutation, float* wJ, const int nR, float* y) {
 	int i,k, pk;
 	float gamma;
 	for (k = 0; k < PARAM_LENGTH; ++k) {
@@ -147,18 +137,15 @@ __device__ void qTy(const float* beta, const int* permutation, const float* wJ, 
 	}
 }
 
-__device__ float* qrDecomposition(const int solvedCols, float* diagR, float* jacNorm, float* beta, int* permutation, int* rank, const float* jacobian, const int nR, float* wjacobian) {
+__device__ void qrDecomposition(const int solvedCols, float* diagR, float* jacNorm, float* beta, int* permutation, int* rank, float* jacobian, const int nR, float* wjacobian) {
 	const int nC = PARAM_LENGTH;
 	float akk,norm2,ak2,aki,gamma,alpha,betak;
 	int i,j,k,dk,pk,nextColumn;
 		
 	// Code in this class assumes that the weighted Jacobian is -(W^(1/2) J),
 	// hence the multiplication by -1.
-	for (j = 0; j < nR; j++) {
-		for (k = 0; k < PARAM_LENGTH; k++) {
-			wjacobian[j*PARAM_LENGTH + k] = -jacobian[j*PARAM_LENGTH + k];
-		}
-	}
+	for (j = 0; j < nR*PARAM_LENGTH; j++)
+			wjacobian[j] = -jacobian[j];
 	
 	// initializations
 	for (k = 0; k < nC; ++k) {
@@ -185,7 +172,7 @@ __device__ float* qrDecomposition(const int solvedCols, float* diagR, float* jac
 				norm2 += aki * aki;
 			}
 			if (isinf(norm2) || isnan(norm2)) {
-				return wjacobian; //UNABLE_TO_PERFORM_QR_DECOMPOSITION_ON_JACOBIAN;
+				return; //UNABLE_TO_PERFORM_QR_DECOMPOSITION_ON_JACOBIAN;
 			}
 			if (norm2 > ak2) {
 				nextColumn = i;
@@ -222,7 +209,7 @@ __device__ float* qrDecomposition(const int solvedCols, float* diagR, float* jac
 		}
 	}
 	*rank = solvedCols;
-	return wjacobian;
+	return;
 }
 
 __device__ void determineLMDirection(const int solvedCols, float* diagR, int* permutation, float* lmDir, float* weightedJacobian, 
@@ -407,7 +394,7 @@ __device__ void determineLMParameter(const int solvedCols, float* diagR, int* pe
 	float gNorm = sqrtf(sum2);
 	float paru = gNorm / delta;
 	if (paru == 0.f) {
-		paru = TWO_EPS / min(delta, 0.1f);
+		paru = FLT_MIN / min(delta, 0.1f);
 	}
 
 	// if the input par lies outside of the interval (parl,paru),
@@ -423,7 +410,7 @@ __device__ void determineLMParameter(const int solvedCols, float* diagR, int* pe
 
 		// evaluate the function at the current value of lmPar
 		if (*lmPar == 0.f) {
-			*lmPar = max(TWO_EPS, 0.001f * paru);
+			*lmPar = max(FLT_MIN, 0.001f * paru);
 		}
 		sPar = sqrtf(*lmPar);
 		for (j = 0; j < solvedCols; ++j) {
@@ -485,7 +472,7 @@ __device__ void determineLMParameter(const int solvedCols, float* diagR, int* pe
 }
 
 //***************************************************************************************************************************
-__device__ void kernel_CentroidFitter(const int sz, const float *data, float *sx, float *sy,
+__device__ void kernel_CentroidFitter(const int sz, float *data, float *sx, float *sy,
 	float *sx_std, float *sy_std){
 
 	float tmpsx = 0.0f; float tmpsx_std = 0.0f;
@@ -521,7 +508,7 @@ __device__ void kernel_CentroidFitter(const int sz, const float *data, float *sx
 
 //***************************************************************************************************************************
 extern "C"
-__global__ void kernel_LM(float* d_data, int sz, int maxIter, int Nfits, float *d_Parameters) {
+__global__ void kernel_LM(float* d_data, uint sz, uint maxIter, uint Nfits, float *d_Parameters) {
 	
 	int tx = threadIdx.x;
 	int bx = blockIdx.x;
@@ -540,10 +527,12 @@ __global__ void kernel_LM(float* d_data, int sz, int maxIter, int Nfits, float *
 	const int nC = PARAM_LENGTH; // Number of parameters.
 	float start[nC]; memset(start, 0, nC * sizeof(float));
 	kernel_CentroidFitter(sz, s_data, &start[X0], &start[Y0], &start[SX], &start[SY]);
-	start[I0] = SHRT_MAX - SHRT_MIN;
+	start[I0] = 65535;
+	float lowerBound[nC]={0.f,0.f,0.f,0.f,0.f,0.f};
+	float upperBound[nC]={(float)sz,(float)sz,(float)(nR),(float)(nR),65535.f,65535.f};
 
-	int iterationCounter = 0;
-	int evaluationCounter = 0;
+	uint iterationCounter = 0;
+	uint evaluationCounter = 0;
 
 	// arrays shared with the other private methods
 	int solvedCols = min(nR, nC);
@@ -575,6 +564,7 @@ __global__ void kernel_LM(float* d_data, int sz, int maxIter, int Nfits, float *
 	float weightedJacobian[nE*nC];
     float weightedResidual[nE];
 	float tmpVec[nE]; memset(tmpVec, 0, nE * sizeof(float));
+	float previousValues[nE]; memset(previousValues, 0, nE * sizeof(float));
 	float previousPoint[nC]; memset(previousPoint, 0, nC * sizeof(float));
 
 	//temporary variables
@@ -598,12 +588,13 @@ __global__ void kernel_LM(float* d_data, int sz, int maxIter, int Nfits, float *
 		
 		iterationCounter++;
 		memcpy(previousPoint, currentPoint, nC * sizeof(float));
+		memcpy(previousValues, currentValues, nC * sizeof(float));
 		// QR decomposition of the jacobian matrix
 		memset(weightedJacobian, 0, nE*nC*sizeof(float));
 		qrDecomposition(solvedCols, diagR, jacNorm, beta, permutation, &rank, jacobian, nR, weightedJacobian);
 
 		//residuals already have weights applied
-		memset(weightedResidual, 0, nE * sizeof(float));
+		//memset(weightedResidual, 0, nE * sizeof(float));
 		memcpy(weightedResidual, currentResiduals, nR*sizeof(float));
 
 		for (i = 0; i < nR; i++) 
@@ -683,7 +674,18 @@ __global__ void kernel_LM(float* d_data, int sz, int maxIter, int Nfits, float *
 			for (j = 0; j < solvedCols; ++j) {
 				pj = permutation[j];
 				lmDir[pj] = -lmDir[pj];
-				currentPoint[pj] = oldX[pj] + lmDir[pj];
+				tmp = oldX[pj] + lmDir[pj];
+				// kernel bounds
+				if (tmp>upperBound[pj]){
+					lmDir[pj] = -lmDir[pj];
+					currentPoint[pj] = upperBound[pj];
+				}
+				else if (tmp<lowerBound[pj]){
+					lmDir[pj] = -lmDir[pj];
+					currentPoint[pj] = lowerBound[pj];
+				}else{
+					currentPoint[pj] = tmp;
+				}
 				s = diag[pj] * lmDir[pj];
 				lmNorm += s * s;
 			}
@@ -707,7 +709,7 @@ __global__ void kernel_LM(float* d_data, int sz, int maxIter, int Nfits, float *
 			actRed = -1.0f;
 			if (0.1f * currentCost < previousCost) {
 				if (currentCost == previousCost)
-					previousCost += 10.f*TWO_EPS;
+					previousCost += 1.0e-6f;
 				r = currentCost / previousCost;
 				actRed = 1.0f - r * r;
 			}
@@ -762,11 +764,16 @@ __global__ void kernel_LM(float* d_data, int sz, int maxIter, int Nfits, float *
 				xNorm = sqrtf(xNorm);
 
 				// tests for convergence.
-				if (converged(iterationCounter, maxIter, previousPoint, currentPoint) == 0)
-					goto end;
+				if((iterationCounter> maxIter)||
+					(converged(previousPoint, currentPoint) == 0))
+						goto end;
 			}
 			else {
 				// failed iteration, reset the previous values
+				if(iterationCounter> maxIter){
+					exeption_code = 4; 
+					goto exep;
+				}
 				currentCost = previousCost;
 				for (i = 0; i < solvedCols; ++i) {
 					pj = permutation[i];
@@ -776,7 +783,7 @@ __global__ void kernel_LM(float* d_data, int sz, int maxIter, int Nfits, float *
 				memcpy(weightedResidual, oldRes, nR * sizeof(float));
 				memcpy(oldRes, tmpVec, nR * sizeof(float));
 				// Reset "current" to previous values.
-				memcpy(currentPoint, previousPoint, nC * sizeof(float));
+				memcpy(currentValues,previousValues,nE*sizeof(float));
 			}
 
 			// Default convergence criteria.
@@ -787,21 +794,21 @@ __global__ void kernel_LM(float* d_data, int sz, int maxIter, int Nfits, float *
 				goto end;
 
 			// tests for termination and stringent tolerances
-			if (abs(actRed) <= 2.f*TWO_EPS &&
-				preRed <= 2.f*TWO_EPS &&
+			if (abs(actRed) <= 2.f*FLT_EPSILON &&
+				preRed <= 2.f*FLT_EPSILON &&
 				ratio <= 2.0f){
 					exeption_code = 1;
 					goto exep; 
 				}
 			//throw new ConvergenceException(LocalizedFormats.TOO_SMALL_COST_RELATIVE_TOLERANCE, costRelativeTolerance);
 
-			else if (delta <= 2.f * TWO_EPS * xNorm) {
+			else if (delta <= 2.f*FLT_EPSILON * xNorm) {
 				exeption_code = 2;
 				goto exep;
 			}
 			//throw new ConvergenceException(LocalizedFormats.TOO_SMALL_PARAMETERS_RELATIVE_TOLERANCE, parRelativeTolerance);
 
-			else if (maxCosine <= 2.f * TWO_EPS) {
+			else if (maxCosine <= 2.f*FLT_EPSILON) {
 				exeption_code = 3;
 				goto exep;
 			}

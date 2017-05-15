@@ -357,8 +357,9 @@ public class CUDA_Gaussian_Fitter<T extends RealType<T>> extends Fitter<T> {
 
 		@Override
 		public boolean hasGPU() {
-			if (System.getProperty("os.name").contains("inux"))
-			System.load(System.getProperty("user.dir")+"/lib/libJCudaDriver-linux-x86_64.so");
+			//if (System.getProperty("os.name").contains("inux"))
+			//System.load(System.getProperty("user.dir")+"/lib/libJCudaDriver-linux-x86_64.so");
+			JCudaDriver.setExceptionsEnabled(true);
 			int res;
 			try {
 				res = JCudaDriver.cuInit(0);
@@ -378,7 +379,7 @@ public class CUDA_Gaussian_Fitter<T extends RealType<T>> extends Fitter<T> {
 				default: numCores = numProcessors*128;
 			}
 			System.out.println(KEY+" using GPU cores:" +String.valueOf(numCores));
-			settings.put("MAXKERNELS", numCores*Runtime.getRuntime().availableProcessors());
+			settings.put("MAXKERNELS", numCores*8);
 			return true;
 		}
 	}

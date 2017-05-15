@@ -104,9 +104,9 @@ class CalibrationDialog extends JDialog {
 			public void actionPerformed(ActionEvent e){saveCalibration();}});
 		btnSaveCalibration.setEnabled(false);
 		
-		JLabel lblMinrange = new JLabel(" ");
+		final JLabel lblMinrange = new JLabel(" ");
 		
-		JLabel lblMaxrange = new JLabel(" ");
+		final JLabel lblMaxrange = new JLabel(" ");
 		lblMaxrange.setHorizontalAlignment(SwingConstants.TRAILING);
 		GroupLayout groupLayout = new GroupLayout(getContentPane());
 		groupLayout.setHorizontalGroup(

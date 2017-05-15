@@ -31,8 +31,10 @@ class EllipticalGaussian implements OptimizationData {
 	}
 	
     private static double getValue(double[] params, int x, int y) {
-    	final double ex = Ex(x,params);
-    	final double ey = Ey(y,params);
+    	final double tsx = 1./(sqrt2*params[INDEX_SX]);
+    	final double tsy = 1./(sqrt2*params[INDEX_SY]);
+    	final double ex = Ex(x,tsx,params);
+    	final double ey = Ey(y,tsy,params);
     	final double ret = params[INDEX_I0]*ex*ey+params[INDEX_Bg];
         return ret;
     }
@@ -56,18 +58,18 @@ class EllipticalGaussian implements OptimizationData {
             public double[][] value(double[] point) throws IllegalArgumentException {
 
             	final double[][] jacobian = new double[xgrid.length][PARAM_LENGTH];
-            	 
-        	     for (int i = 0; i < xgrid.length; ++i) {
-        	    	 final double ex = Ex(xgrid[i], point);
-        	    	 final double ey = Ey(ygrid[i], point);
-        	    	 jacobian[i][INDEX_X0] = point[INDEX_I0]*ey*dEx(xgrid[i],point);
-        	    	 jacobian[i][INDEX_Y0] = point[INDEX_I0]*ex*dEy(ygrid[i],point);
-        	    	 jacobian[i][INDEX_SX] = point[INDEX_I0]*ey*dEsx(xgrid[i],point);
-        	    	 jacobian[i][INDEX_SY] = point[INDEX_I0]*ex*dEsy(ygrid[i],point);
-        	    	 jacobian[i][INDEX_I0] = ex*ey;
-        	    	 jacobian[i][INDEX_Bg] = 1;
-        	     }
-        	     
+            	final double tsx = 1./(sqrt2*point[INDEX_SX]);
+        	    final double tsy = 1./(sqrt2*point[INDEX_SY]);
+        	    for (int i = 0; i < xgrid.length; ++i) {
+	    	    	final double ex = Ex(xgrid[i],tsx, point);
+	    	    	final double ey = Ey(ygrid[i],tsy, point);
+	    	    	jacobian[i][INDEX_X0] = point[INDEX_I0]*ey*dEx(xgrid[i],tsx,point);
+	    	    	jacobian[i][INDEX_Y0] = point[INDEX_I0]*ex*dEy(ygrid[i],tsy,point);
+	    	    	jacobian[i][INDEX_SX] = point[INDEX_I0]*ey*dEsx(xgrid[i],tsx,point);
+	    	    	jacobian[i][INDEX_SY] = point[INDEX_I0]*ex*dEsy(ygrid[i],tsy,point);
+	    	    	jacobian[i][INDEX_I0] = ex*ey;
+	    	    	jacobian[i][INDEX_Bg] = 1;
+	        	} 
 				return jacobian;
             }
         };
@@ -83,37 +85,37 @@ class EllipticalGaussian implements OptimizationData {
 		return 2*FastMath.exp(-v*v)/FastMath.sqrt(FastMath.PI);
 	}
 
-	private static double Ex(final int x, double[] variables){
-		final double tsx = 1./(sqrt2*variables[INDEX_SX]);
+	private static double Ex(final int x, final double tsx, double[] variables){
+		//final double tsx = 1./(sqrt2*variables[INDEX_SX]);
 		final double e1 = erf(tsx*(x-variables[INDEX_X0]+0.5));
 		final double e2 = erf(tsx*(x-variables[INDEX_X0]-0.5));
 		return 0.5*e1 - 0.5*e2;
 	}
 	
-	private static double Ey(final int y, double[] variables){
-		final double tsy = 1./(sqrt2*variables[INDEX_SY]);
+	private static double Ey(final int y, final double tsy, double[] variables){
+		//final double tsy = 1./(sqrt2*variables[INDEX_SY]);
 		final double e1 = erf(tsy*(y-variables[INDEX_Y0]+0.5));
 		final double e2 = erf(tsy*(y-variables[INDEX_Y0]-0.5));
 		return 0.5*e1-0.5*e2;
 	}	
 	
-	private static double dEx(final int x, double[] variables){
-		final double tsx = 1./(sqrt2*variables[INDEX_SX]);
+	private static double dEx(final int x, final double tsx, double[] variables){
+		//final double tsx = 1./(sqrt2*variables[INDEX_SX]);
 		return 0.5*tsx*(dErf(tsx*(x-variables[INDEX_X0]-0.5))-dErf(tsx*(x-variables[INDEX_X0]+0.5)));
 	}
 	
-	private static double dEy(final int y, double[] variables){
-		final double tsy = 1./(sqrt2*variables[INDEX_SY]);
+	private static double dEy(final int y, final double tsy, double[] variables){
+		//final double tsy = 1./(sqrt2*variables[INDEX_SY]);
 		return 0.5*tsy*(dErf(tsy*(y-variables[INDEX_Y0]-0.5))-dErf(tsy*(y-variables[INDEX_Y0]+0.5)));
 	}
 	
-	private static double dEsx(final int x, double[] variables){
-		final double tsx = 1./(sqrt2*variables[INDEX_SX]);
+	private static double dEsx(final int x, final double tsx,double[] variables){
+		//final double tsx = 1./(sqrt2*variables[INDEX_SX]);
 		return 0.5*tsx*((x-variables[INDEX_X0]-0.5)*dErf(tsx*(x-variables[INDEX_X0]-0.5))-(x-variables[INDEX_X0]+0.5)*dErf(tsx*(x-variables[INDEX_X0]+0.5)))/variables[INDEX_SX];
 	}
 	
-	private static double dEsy(final int y, double[] variables){
-		final double tsy = 1./(sqrt2*variables[INDEX_SY]);
+	private static double dEsy(final int y, final double tsy, double[] variables){
+		//final double tsy = 1./(sqrt2*variables[INDEX_SY]);
 		return 0.5*tsy*((y-variables[INDEX_Y0]-0.5)*dErf(tsy*(y-variables[INDEX_Y0]-0.5))-(y-variables[INDEX_Y0]+0.5)*dErf(tsy*(y-variables[INDEX_Y0]+0.5)))/variables[INDEX_SY];
 	}
 }
