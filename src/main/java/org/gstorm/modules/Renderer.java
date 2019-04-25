@@ -28,8 +28,8 @@ public abstract class Renderer extends MultiRunModule {
 	protected Renderer(final int width, final int height) {
 		xBins=width;
 		yBins=height;
-		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory< FloatType >();
-		img = imgFactory.create( new int[]{ width, height}, new FloatType() );
+		final ImgFactory< FloatType > imgFactory = new ArrayImgFactory< FloatType >(new FloatType());
+		img = imgFactory.create( new int[]{ width, height});
 	}
 	
 	public ImagePlus getImage(){

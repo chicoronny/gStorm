@@ -5,16 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jfree.chart.util.ParamChecks;
 import org.jfree.data.statistics.HistogramType;
 import org.jfree.data.xy.AbstractIntervalXYDataset;
-import org.jfree.util.PublicCloneable;
 
 /**
  * A HistogramDataset that returns the log of the count in each bin (plus one),
  * so as to have a logarithmic plot.
  */
-public class LogHistogramDataset extends AbstractIntervalXYDataset implements PublicCloneable {
+public class LogHistogramDataset extends AbstractIntervalXYDataset implements Cloneable {
 	
 	private static final long serialVersionUID = 6012084169414194555L;
 	private final List<Map<String,Object>> list;
@@ -26,9 +24,17 @@ public class LogHistogramDataset extends AbstractIntervalXYDataset implements Pu
 	}
 	
 	public void setType(HistogramType type) {
-        ParamChecks.nullNotPermitted(type, "type");
+        if (type == null) {
+            throw new IllegalArgumentException("Null 'type' argument.");
+        }
         this.type = type;
         fireDatasetChanged();
+    }
+	
+	public static void nullNotPermitted(Object param, String name) {
+        if (param == null) {
+            throw new IllegalArgumentException("Null '" + name + "' argument.");
+        }
     }
 	
 	public void addSeries(String key, int[] counts, int bins, double d, double e){

@@ -40,7 +40,7 @@ public class ImageLoader extends SingleRunModule{
 		em_gain = cameraSettings.get(1);
 		conversion = cameraSettings.get(2);
 		Thread.currentThread().setName("ImageLoader");
-		imgFactory = new ArrayImgFactory< FloatType >();
+		imgFactory = new ArrayImgFactory< FloatType >( new FloatType());
 	}
 	
 	@Override
@@ -51,7 +51,7 @@ public class ImageLoader extends SingleRunModule{
 
 	@Override
 	public Element processData(Element data) {	
-		Img<FloatType> theImage = imgFactory.create(new long[]{img.getWidth(), img.getHeight()}, new FloatType());
+		Img<FloatType> theImage = imgFactory.create(new long[]{img.getWidth(), img.getHeight()});
 		int index=0;
 		Object ip = img.getProcessor(++curSlice).getPixels();
 		String className = ip.getClass().getName();

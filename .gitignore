@@ -3,3 +3,7 @@
 /gStorm.userlibraries
 /target/
 /MANIFEST.MF
+.gitignore
+.settings
+.classpath
+.project

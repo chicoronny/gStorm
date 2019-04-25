@@ -111,7 +111,7 @@ public class NMSFastMedian<T extends RealType<T> & NativeType<T>> extends Single
 			final RandomAccessibleInterval<T> firstInterval = firstFrame.getPixels(); // handle borders
 			final long[] dims = new long[firstInterval.numDimensions()];
 			firstInterval.dimensions(dims);
-			Img<T> out = new ArrayImgFactory<T>().create(dims, Views.iterable(firstInterval).firstElement());
+			Img<T> out = new ArrayImgFactory<T>(Views.iterable(firstInterval).firstElement()).create(dims);
 
 			final FinalInterval shrinked = Intervals.expand(out, -1); // handle borders
 			final IntervalView<T> source = Views.interval(out, shrinked);
@@ -203,7 +203,7 @@ public class NMSFastMedian<T extends RealType<T> & NativeType<T>> extends Single
 		RandomAccessibleInterval<T> intervalB = frameB.getPixels();
 
 		for (int i = 0; i < nFrames; i++) {
-			Img<T> outFrame = new ArrayImgFactory<T>().create(intervalA, Views.iterable(intervalA).firstElement());
+			Img<T> outFrame = new ArrayImgFactory<T>(Views.iterable(intervalA).firstElement()).create(intervalA);
 			Cursor<T> outCursor = outFrame.cursor();
 			Cursor<T> cursorA = Views.iterable(intervalA).cursor();
 			Cursor<T> cursorB = Views.iterable(intervalB).cursor();

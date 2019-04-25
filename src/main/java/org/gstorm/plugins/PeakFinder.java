@@ -98,7 +98,7 @@ public class PeakFinder<T extends RealType<T>> extends MultiRunModule implements
 				min[d] = -min[d];
 			}
 			final FloatType type = new FloatType();
-			final RandomAccessibleInterval<FloatType> dog = Views.offset(Util.getArrayOrCellImgFactory(pixels, type).create(pixels, type), min);
+			final RandomAccessibleInterval<FloatType> dog = Views.offset(Util.getArrayOrCellImgFactory(pixels, type).create(pixels), min);
 			try {
 				Gauss3.gauss(sigma, extended, dog, 4);
 			} catch (IncompatibleTypeException e) {

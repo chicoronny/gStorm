@@ -12,7 +12,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-@SuppressWarnings("static-method")
 public class FastMathTestPerformance {
 	
 	private static final int RUNS = Integer.parseInt(System.getProperty("testRuns","10000000"));
@@ -656,7 +655,6 @@ public class FastMathTestPerformance {
 	        Assert.assertTrue(!Double.isNaN(x));
 	    }
 
-	    @SuppressWarnings("boxing")
 	    @Test
 	    public void testSimpleBenchmark() {
 	        final String SM = "StrictMath";

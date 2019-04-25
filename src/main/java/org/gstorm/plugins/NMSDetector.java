@@ -87,7 +87,7 @@ public class NMSDetector<T extends RealType<T> & NativeType<T>> extends MultiRun
 				min[d] = -min[d];
 			}
 			T type = Views.iterable(pixels).firstElement();
-			final RandomAccessibleInterval<T> dog = Views.offset(Util.getArrayOrCellImgFactory(pixels, type).create(pixels, type), min);
+			final RandomAccessibleInterval<T> dog = Views.offset(Util.getArrayOrCellImgFactory(pixels, type).create(pixels), min);
 			
 			try {
 				Gauss3.gauss(sigma, extended, dog, 2);

@@ -129,7 +129,6 @@ public abstract class AbstractModule implements ModuleInterface {
 		return running;
 	}
 	
-	@SuppressWarnings("static-method")
 	protected void pause(long ms){
 		try {
 			Thread.sleep(ms);
